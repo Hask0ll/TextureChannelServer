@@ -1,3 +1,5 @@
+#pragma once
+
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -13,9 +15,16 @@ public:
     {
         return "Perlin Noise";
     }
+
+  
 private:
-    int width, height;
-    GLuint textureID;
+    int m_Width, m_Height;
+    GLuint m_TextureID;
+    int m_OctavesNumber;
+
+    std::vector<unsigned char> m_Pixels;
+
+    
 
     float Generate2D(float x, float y) {
         int x0 = int(x);
@@ -63,21 +72,21 @@ private:
     }
 
 public:
-    PerlinNoiseOperator(int w, int h) : width(w), height(h) {
+    PerlinNoiseOperator(int numberOfOctaves = 1): m_OctavesNumber(numberOfOctaves), m_Width(512), m_Height(512) {
         generateNoiseTexture();
     }
 
     void generateNoiseTexture() {
-        std::vector<unsigned char> pixels(width * height * 4);
+        std::vector<unsigned char> m_Pixels(m_Width * m_Height * 4);
         const float GRID_SIZE = 100.0f;
         
-        for(int y = 0; y < height; y++) {
-            for(int x = 0; x < width; x++) {
+        for(int y = 0; y < m_Height; y++) {
+            for(int x = 0; x < m_Width; x++) {
                 float val = 0.0f;
                 float frequency = 1.0f;
                 float amplitude = 1.0f;
                 
-                for(int i = 0; i < 4; i++) {
+                for(int i = 0; i < m_OctavesNumber; i++) {
                     val += Generate2D(x * frequency / GRID_SIZE, 
                                     y * frequency / GRID_SIZE) * amplitude;
                     frequency *= 2.0f;
@@ -87,28 +96,28 @@ public:
                 val = std::clamp(val * 1.2f, -1.0f, 1.0f);
                 unsigned char color = static_cast<unsigned char>((val + 1.0f) * 127.5f);
                 
-                int idx = (y * width + x) * 4;
-                pixels[idx] = color;     // R
-                pixels[idx + 1] = color; // G
-                pixels[idx + 2] = color; // B
-                pixels[idx + 3] = 255;   // A
+                int idx = (y * m_Width + x) * 4;
+                m_Pixels[idx] = color;     // R
+                m_Pixels[idx + 1] = color; // G
+                m_Pixels[idx + 2] = color; // B
+                m_Pixels[idx + 3] = 255;   // A
             }
         }
 
         // Créer la texture OpenGL
-        glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
-        glTextureStorage2D(textureID, 1, GL_RGBA8, width, height);
-        glTextureSubImage2D(textureID, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
+        glTextureStorage2D(m_TextureID, 1, GL_RGBA8, m_Width, m_Height);
+        glTextureSubImage2D(m_TextureID, 0, 0, 0, m_Width, m_Height, GL_RGBA, GL_UNSIGNED_BYTE, m_Pixels.data());
         
-        glTextureParameteri(textureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTextureParameteri(textureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTextureParameteri(m_TextureID, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_TextureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    void draw() {
+    virtual void Draw() override {
         ImGui::Begin("Perlin Noise");
         
         // Afficher la texture avec ImGui
-        ImGui::Image(( ImTextureID)(intptr_t)textureID, ImVec2(width, height));
+        ImGui::Image(( ImTextureID)(intptr_t)m_TextureID, ImVec2(m_Width, m_Height));
         
         if (ImGui::Button("Regenerate")) {
             generateNoiseTexture();
@@ -117,7 +126,12 @@ public:
         ImGui::End();
     }
 
+    virtual std::vector<unsigned char> GetData()
+    {
+        return m_Pixels;
+    }
+
     ~PerlinNoiseOperator() {
-        glDeleteTextures(1, &textureID);
+        glDeleteTextures(1, &m_TextureID);
     }
 };
