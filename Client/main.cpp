@@ -18,5 +18,6 @@
 int main(int argc, char** argv)
 {
     std::unique_ptr<Application> application = std::make_unique<Application>();
+    application->Run();
     // Créer l'opérateur de Perlin noise
 }

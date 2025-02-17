@@ -10,14 +10,15 @@ public:
     Application()
     {
         Renderer::Init();
+        Renderer::SetUpdateCallback([this] { this->Update(); });
+        testTexture =  new Texture();
+        // testTexture->AddPerlinOperator(5);
+        testTexture->AddColorizerOperator();
     }
 
     ~Application()
     {
         Renderer::Cleanup();
-        Renderer::SetUpdateCallback([this] { this->Update(); });
-        testTexture =  new Texture();
-        testTexture->AddPerlinOperator(5);
     }
 
     void Run()

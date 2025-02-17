@@ -33,6 +33,7 @@ public:
         auto colorizer = new ColorizerOperator(m_width, m_height);
         colorizer->processTexture();
         m_stack.push_back(colorizer->GetData());
+        m_operators.push_back(colorizer);
     }
 
     void Draw()
