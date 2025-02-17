@@ -1,0 +1,23 @@
+{
+  "name":"procedural-tool",
+  "description":"",
+  "version-string":"0.1.0",
+  "dependencies":[
+    "glm",
+    {
+      "name":"glad",
+      "features":[
+        "gl-api-46"
+      ]
+    },
+    "nlohmann-json",
+    {
+      "name":"imgui",
+      "features":[
+        "glfw-binding",
+        "opengl3-binding"
+      ]
+    },
+    "glfw3"
+  ]
+}
