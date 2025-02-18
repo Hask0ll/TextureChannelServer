@@ -74,5 +74,46 @@ target_link_libraries(Client PRIVATE
     glfw
 )
 
+# Server executable source files
+file(GLOB_RECURSE SERVER_SOURCES 
+    "${CMAKE_SOURCE_DIR}/Server/*.cpp"
+    "${CMAKE_SOURCE_DIR}/Server/*.h"
+)
+
+# Debug output
+message("Server sources: ${SERVER_SOURCES}")
+
+# Verify Server sources exist
+if(NOT SERVER_SOURCES)
+    message(FATAL_ERROR "No source files found for Server in ${CMAKE_SOURCE_DIR}/Server/")
+endif()
+
+# Server executable
+add_executable(Server ${SERVER_SOURCES})
+
+target_include_directories(Server PRIVATE 
+    "${CMAKE_SOURCE_DIR}/Server"
+    "${CMAKE_SOURCE_DIR}/Library"
+)
+
+target_link_libraries(Server PRIVATE 
+    Library
+    glm::glm
+    glad::glad
+    nlohmann_json::nlohmann_json
+    imgui::imgui
+    glfw
+)
+
 # Disable debug symbols for RelWithDebInfo build
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG")
+
+add_executable(Tests
+    "${CMAKE_SOURCE_DIR}/Tests/Tests.cpp"
+)
+
+target_link_libraries(Tests PRIVATE Library)
+
+# enable testing
+enable_testing()
+add_test(NAME Tests COMMAND Tests)

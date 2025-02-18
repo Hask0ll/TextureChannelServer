@@ -417,6 +417,4 @@ FodyWeavers.xsd
 
 out/
 
-CMakePresets.json
-
 Build/

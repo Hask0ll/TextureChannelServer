@@ -26,6 +26,7 @@ public:
         m_operators.push_back(perlin);
         perlin->generateNoiseTexture();
         m_stack.push_back(perlin->GetData());
+		m_messageCallback("Perlin operator added");
     }
 
     void AddColorizerOperator()
@@ -34,6 +35,7 @@ public:
         colorizer->processTexture();
         m_stack.push_back(colorizer->GetData());
         m_operators.push_back(colorizer);
+		m_messageCallback("Colorizer operator added");
     }
 
     void Draw()
@@ -44,8 +46,14 @@ public:
         }
     }
 
+    void SetOnMessageCallback(std::function<void(const std::string&)> callback)
+    {
+        m_messageCallback = callback;
+    }
+
 private:
     std::list<std::vector<unsigned char>> m_stack;
     std::vector<Operator*> m_operators;
     int m_width, m_height;
+    std::function<void(const std::string&)> m_messageCallback;
 };

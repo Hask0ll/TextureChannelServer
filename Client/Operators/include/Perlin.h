@@ -15,7 +15,6 @@ public:
     {
         return "Perlin Noise";
     }
-
   
 private:
     int m_Width, m_Height;

@@ -13,10 +13,13 @@ public:
         Renderer::Init();
         Renderer::SetUpdateCallback([this] { this->Update(); });
         Logger::Init("app.log", Logger::Level::DEBUG);
-        Logger::Info("Initialisation de l'application...");
-        Logger::Info("Application démarrée");
+        Logger::Info("Application Initialisation...");
+        Logger::Info("Application Started");
         testTexture =  new Texture();
-        // testTexture->AddPerlinOperator(5);
+        //// testTexture->AddPerlinOperator(5);
+		testTexture->SetOnMessageCallback([](const std::string& message) {
+			Logger::Info(message);
+			});
         testTexture->AddColorizerOperator();
     }
 
@@ -38,7 +41,6 @@ public:
 
     void AddTexture(std::string name)
     {
-        
     }
 private:
     std::list<unsigned char> m_stacks;
