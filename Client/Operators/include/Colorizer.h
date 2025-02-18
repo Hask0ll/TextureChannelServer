@@ -13,9 +13,9 @@ public:
         return "Colorizer";
     }
 
-    ColorizerOperator(int w, int h) : width(w), height(h) {
+    ColorizerOperator(glm::vec3 color) : width(512), height(512) {
         // Initialiser avec du rouge comme couleur par défaut
-        tintColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+        tintColor = ImVec4(color.x, color.y, color.z, 1.0f);
 
         // Créer la texture
         glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
@@ -65,19 +65,8 @@ public:
     }
 
     void Draw() override {
-        ImGui::Begin("Colorize");
-
-        // Interface pour choisir la couleur
-        if (ImGui::ColorEdit4("Tint Color", (float*)&tintColor)) {
-            if (!currentTexture.empty()) {
-                processTexture(currentTexture);
-            }
-        }
-
-        // Afficher la texture
-        ImGui::Image((ImTextureID)(intptr_t)textureID, ImVec2(width, height));
-
-        ImGui::End();
+        ImVec2 available = ImGui::GetContentRegionAvail();
+        ImGui::Image((ImTextureID)(intptr_t)textureID, available);
     }
 
     virtual std::vector<unsigned char> GetData()

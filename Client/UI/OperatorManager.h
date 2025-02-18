@@ -28,11 +28,15 @@ public:
     OperatorType GetType() override { return OperatorType::PerlinType; }
 };
 
+struct ColorizerParams : public OperatorParams {
+    ImVec4 tintColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+    OperatorType GetType() override { return OperatorType::ColorizerType; }
+};
+
 class OperatorManager
 {
     struct OperatorInfo {
         std::string name;
-        std::function<std::shared_ptr<Operator>(std::shared_ptr<OperatorParams>)> factory;
         std::function<std::shared_ptr<OperatorParams>()> createDefaultParams;
         std::function<void(OperatorParams*)> drawParamsUI;
     };
@@ -53,20 +57,23 @@ public:
     {
         m_operators["Perlin Noise"] = {
             "Perlin Noise",
-            [](std::shared_ptr<OperatorParams> params) {
-                auto* perlinParams = dynamic_cast<PerlinNoiseParams*>(params.get());
-                if (!perlinParams) {
-                    return std::unique_ptr<Operator>(nullptr);  // Retour explicite d'un unique_ptr vide
-                }
-    
-                return std::unique_ptr<Operator>(new PerlinNoiseOperator(perlinParams->octaves));
-            },
             []() {
                 return std::make_shared<PerlinNoiseParams>();
             },
             [](OperatorParams* params) {
                 auto perlinParams = static_cast<PerlinNoiseParams*>(params);
                 ImGui::InputInt("Octaves", &perlinParams->octaves);
+            }
+        };
+
+        m_operators["Colorizer"] = {
+            "Colorizer",
+            []() {
+                return std::make_shared<ColorizerParams>();
+            },
+            [](OperatorParams* params) {
+                auto colorizerParams = static_cast<ColorizerParams*>(params);
+                ImGui::ColorEdit4("Tint Color", (float*)&colorizerParams->tintColor);
             }
         };
     }
@@ -110,16 +117,17 @@ public:
 
                 if (ImGui::Button("Add to Stack")) {
                     auto opType = m_currentParams->GetType();
-                    auto op = info.factory(m_currentParams);
-                    if (op) {
-                        switch(opType)
-                        {
-                            case OperatorType::PerlinType:
-                                m_currentTexture->AddPerlinOperator(static_cast<PerlinNoiseParams*>(m_currentParams.get())->octaves);
-                                break;
-                            default:
-                                break;
-                        }
+                    switch(opType)
+                    {
+                        case OperatorType::PerlinType:
+                            m_currentTexture->AddPerlinOperator(static_cast<PerlinNoiseParams*>(m_currentParams.get())->octaves);
+                            break;
+                        case OperatorType::ColorizerType:
+                            auto colorizerParams = static_cast<ColorizerParams*>(m_currentParams.get());
+                            if(m_currentTexture == nullptr) return;
+                            auto color = glm::vec3(colorizerParams->tintColor.x, colorizerParams->tintColor.y, colorizerParams->tintColor.z);
+                            m_currentTexture->AddColorizerOperator(color);
+                            break;
                     }
                     ImGui::CloseCurrentPopup();
                 }
