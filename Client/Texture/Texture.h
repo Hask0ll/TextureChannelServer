@@ -28,16 +28,23 @@ public:
         m_operators.push_back(perlin);
         perlin->generateNoiseTexture();
         m_stack.push_back(perlin->GetData());
-		m_messageCallback("Perlin operator added");
+		// m_messageCallback("Perlin operator added");
     }
 
-    void AddColorizerOperator()
+    void AddColorizerOperator(glm::vec3 color)
     {
-        auto colorizer = new ColorizerOperator(m_width, m_height);
-        colorizer->processTexture();
+        auto colorizer = new ColorizerOperator(color);
+        auto lastStack = m_stack.back();
+        if(lastStack.empty())
+        {
+            colorizer->processTexture();
+        } else
+        {
+            colorizer->processTexture(lastStack);
+        }
         m_stack.push_back(colorizer->GetData());
         m_operators.push_back(colorizer);
-		m_messageCallback("Colorizer operator added");
+		// m_messageCallback("Colorizer operator added");
     }
 
     void AddLoadOperator(std::string& name)

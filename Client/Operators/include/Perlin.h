@@ -76,7 +76,7 @@ public:
     }
 
     void generateNoiseTexture() {
-        std::vector<unsigned char> m_Pixels(m_Width * m_Height * 4);
+        m_Pixels.resize(m_Width * m_Height * 4);
         const float GRID_SIZE = 100.0f;
         
         for(int y = 0; y < m_Height; y++) {
@@ -113,17 +113,8 @@ public:
     }
 
     virtual void Draw() override {
-        // Obtenir l'espace disponible dans la fenêtre
         ImVec2 available = ImGui::GetContentRegionAvail();
-    
-        // Afficher l'image en utilisant tout l'espace disponible
         ImGui::Image((ImTextureID)(intptr_t)m_TextureID, available);
-    
-        // Bouton en bas à droite
-        ImGui::SetCursorPos(ImVec2(available.x - 100, available.y - 30)); // Position pour le bouton
-        if (ImGui::Button("Regenerate")) {
-            generateNoiseTexture();
-        }
     }
 
     virtual std::vector<unsigned char> GetData()
