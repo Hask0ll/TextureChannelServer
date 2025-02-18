@@ -3,8 +3,10 @@
 #include <vector>
 
 #include "Operators/include/Colorizer.h"
+// #include "Operators/include/Load.h"
 #include "Operators/include/Operator.h"
 #include "Operators/include/Perlin.h"
+// #include "Operators/include/Save.h"
 
 enum OperatorName
 {
@@ -16,7 +18,7 @@ enum OperatorName
 class Texture
 {
 public:
-    Texture(): m_width(512), m_height(512)
+    Texture(std::string& name): m_width(512), m_height(512), m_name(name) 
     {
     }
 
@@ -38,6 +40,28 @@ public:
 		m_messageCallback("Colorizer operator added");
     }
 
+    void AddLoadOperator(std::string& name)
+    {
+        // auto load = new LoadOperator();
+        // load->process(name);
+        // m_stack.push_back(load->GetData());
+        // m_operators.push_back(load);
+    }
+
+    void AddSaveOperator(std::string& name)
+    {
+        // auto data = m_stack.back();
+        // auto save = new SaveOperator();
+        // save->process(name, data);
+        // m_stack.push_back(data);
+        // m_operators.push_back(save);
+    }
+
+    std::string GetName()
+    {
+        return m_name;
+    }
+
     void Draw()
     {
         for(auto op : m_operators) // draw only stack last item
@@ -46,6 +70,11 @@ public:
         }
     }
 
+    std::vector<Operator*> GetOperators()
+    {
+        return m_operators;
+    }
+  
     void SetOnMessageCallback(std::function<void(const std::string&)> callback)
     {
         m_messageCallback = callback;
@@ -55,5 +84,6 @@ private:
     std::list<std::vector<unsigned char>> m_stack;
     std::vector<Operator*> m_operators;
     int m_width, m_height;
+    std::string m_name;
     std::function<void(const std::string&)> m_messageCallback;
 };
