@@ -2,10 +2,11 @@
 #include <list>
 
 #include "Logger/Logger.h"
+#include "Network/NetWorkClient.h"
 #include "Renderer/Renderer.h"
 #include "Storage/Storage.h"
-#include "Texture/Texture.h"
-#include "UI/TextureManager.h"
+#include "UI/include/TextureManager.h"
+
 
 class Application
 {
@@ -20,6 +21,7 @@ public:
         m_storage = std::make_shared<Storage>();
         m_TextureUI = std::make_unique<TextureManagerUI>();
         m_Instance = this;
+        m_Client = std::make_shared<NetworkClient>();
     }
 
     ~Application()
@@ -36,6 +38,11 @@ public:
     std::shared_ptr<Storage> GetStorage()
     {
         return m_storage;
+    }
+
+    std::shared_ptr<NetworkClient> GetClient()
+    {
+        return m_Client;
     }
 
     void Run()
@@ -56,4 +63,6 @@ private:
     std::shared_ptr<Storage> m_storage = nullptr;
     static inline Application* m_Instance = nullptr;
     std::unique_ptr<TextureManagerUI> m_TextureUI;
+    std::shared_ptr<NetworkClient> m_Client;
+
 };

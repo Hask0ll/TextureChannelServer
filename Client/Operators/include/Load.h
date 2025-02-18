@@ -1,4 +1,5 @@
 #pragma once
+#include <list>
 #include <vector>
 #include "Operator.h"
 
@@ -12,11 +13,19 @@ public:
 
     LoadOperator() = default;
 
-    void process(std::string& name);
-
-    std::vector<unsigned char> GetData()
+    void process(std::string& name, std::list<std::vector<unsigned char>> stack);
+  
+    virtual size_t GetSerializedSize() const override
     {
-        return m_data;
+        return 0;
+    }
+    virtual void Serialize(char* buffer) const override
+    {
+        
+    }
+    virtual void Deserialize(const char* buffer) override
+    {
+        
     }
 
     virtual void Draw() override

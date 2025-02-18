@@ -171,3 +171,43 @@ void NetworkClient::Sending(bool ApplicationRunning)
         }
         }).detach();
 }
+
+void NetworkClient::SendBinaryData(const char* data, size_t size) {
+    if (!connected) {
+        throw std::runtime_error("Not connected to server");
+    }
+
+    // Need to send the size first
+    int bytesSent = send(clientSocket, reinterpret_cast<const char*>(&size), sizeof(size_t), 0);
+    if (bytesSent == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send data size");
+    }
+
+    // Next send data
+    bytesSent = send(clientSocket, data, size, 0);
+    if (bytesSent == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send data");
+    }
+}
+
+std::vector<char> NetworkClient::ReceiveBinaryData() {
+    if (!connected) {
+        throw std::runtime_error("Not connected to server");
+    }
+
+    // First receive the size
+    size_t size;
+    int bytesReceived = recv(clientSocket, reinterpret_cast<char*>(&size), sizeof(size_t), 0);
+    if (bytesReceived <= 0) {
+        throw std::runtime_error("Failed to receive data size");
+    }
+
+    // Next receive the data
+    std::vector<char> buffer(size);
+    bytesReceived = recv(clientSocket, buffer.data(), size, 0);
+    if (bytesReceived <= 0) {
+        throw std::runtime_error("Failed to receive data");
+    }
+
+    return buffer;
+}

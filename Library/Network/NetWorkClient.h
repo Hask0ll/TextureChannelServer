@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 
 #define WIN32_LEAN_AND_MEAN
@@ -33,7 +34,8 @@ public:
     void StartListening();
     void StopListening();
     void Sending(bool ApplicationRunning);
-
+    void NetworkClient::SendBinaryData(const char* data, size_t size);
+    std::vector<char> NetworkClient::ReceiveBinaryData();
 private:
     void InitializeWinsock();
     void SetupSocket();

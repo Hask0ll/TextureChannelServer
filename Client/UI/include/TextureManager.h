@@ -69,6 +69,10 @@ public:
         if (ImGui::Button("Create Texture", ImVec2(-1, 0))) {
             if (strlen(m_newTextureName) > 0) {
                 std::shared_ptr<Texture> texture = std::make_shared<Texture>(std::string(m_newTextureName));
+                texture->SetOnMessageCallback([this]
+                {
+                  this->Notify();  
+                });
                 m_textures.push_back(texture);
                 memset(m_newTextureName, 0, sizeof(m_newTextureName));
             }
@@ -112,5 +116,7 @@ public:
 
         ImGui::End();
     }
+
+    void Notify();
 
 };

@@ -20,7 +20,7 @@
 int main(int argc, char** argv) {
     try {
         std::unique_ptr<Application> application = std::make_unique<Application>();
-        // NetworkClient client;
+        NetworkClient client;
 
         // // Configure le callback pour les messages reçus
         // client.SetMessageCallback([](const std::string& message) {

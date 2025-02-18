@@ -69,7 +69,16 @@ private:
     }
 
 public:
+    // Data structure for serialization
+    struct SerializedData {
+        int octavesNumber;
+    };
+    
     PerlinNoiseOperator(int numberOfOctaves = 1): m_OctavesNumber(numberOfOctaves), m_Width(512), m_Height(512) {
+    }
+
+    virtual size_t GetSerializedSize() const override {
+        return sizeof(int);
     }
 
     void generateNoiseTexture(std::list<std::vector<unsigned char>>& stack) {
@@ -122,5 +131,17 @@ public:
 
     ~PerlinNoiseOperator() {
         glDeleteTextures(1, &m_TextureID);
+    }
+
+    virtual void Serialize(char* buffer) const override {
+        size_t offset = 0;
+        memcpy(buffer + offset, &m_OctavesNumber, sizeof(int));
+        offset += sizeof(int);
+    }
+
+    virtual void Deserialize(const char* buffer) override {
+        size_t offset = 0;
+        memcpy(&m_OctavesNumber, buffer + offset, sizeof(int));
+        offset += sizeof(int);
     }
 };

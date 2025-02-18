@@ -15,6 +15,8 @@ enum OperatorType
 {
     PerlinType,
     ColorizerType,
+    SaveType,
+    LoadType,
 };
 
 struct OperatorParams {
@@ -31,6 +33,16 @@ public:
 struct ColorizerParams : public OperatorParams {
     ImVec4 tintColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
     OperatorType GetType() override { return OperatorType::ColorizerType; }
+};
+
+struct LoadParams : public OperatorParams {
+    OperatorType GetType() override { return OperatorType::LoadType; }
+    char name[256];
+};
+
+struct SaveParams : public OperatorParams {
+    OperatorType GetType() override { return OperatorType::SaveType; }
+    char name[256];
 };
 
 class OperatorManager
@@ -76,13 +88,34 @@ public:
                 ImGui::ColorEdit4("Tint Color", (float*)&colorizerParams->tintColor);
             }
         };
+
+        m_operators["Save"] = {
+            "Save",
+            []() {
+                return std::make_shared<SaveParams>();
+            },
+            [](OperatorParams* params) {
+                auto saveParams = static_cast<SaveParams*>(params);
+                ImGui::InputText("##texturename", saveParams->name, sizeof(saveParams->name));
+            }
+        };
+
+        m_operators["Load"] = {
+            "Load",
+            []() {
+                return std::make_shared<LoadParams>();
+            },
+            [](OperatorParams* params) {
+                auto loadParams = static_cast<LoadParams*>(params);
+                ImGui::InputText("##texturename", loadParams->name, sizeof(loadParams->name));
+            }
+        };
     }
     void Draw() {
         if (ImGui::Button("Add Operator")) {
             m_showOperatorSelector = true;
         }
 
-        // Popup de sélection d'opérateur
         if (m_showOperatorSelector) {
             ImGui::OpenPopup("Select Operator");
         }
@@ -104,7 +137,6 @@ public:
             ImGui::OpenPopup("Configure Operator");
         }
 
-        // Popup de configuration des paramètres
         if (ImGui::BeginPopupModal("Configure Operator", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             if (m_currentParams) {
                 ImGui::Text("Configure %s", m_selectedOperatorType.c_str());
@@ -120,14 +152,30 @@ public:
                     switch(opType)
                     {
                         case OperatorType::PerlinType:
-                            m_currentTexture->AddPerlinOperator(static_cast<PerlinNoiseParams*>(m_currentParams.get())->octaves);
-                            break;
+                            {
+                                m_currentTexture->AddPerlinOperator(static_cast<PerlinNoiseParams*>(m_currentParams.get())->octaves);
+                                break;
+                            }
                         case OperatorType::ColorizerType:
-                            auto colorizerParams = static_cast<ColorizerParams*>(m_currentParams.get());
-                            if(m_currentTexture == nullptr) return;
-                            auto color = glm::vec3(colorizerParams->tintColor.x, colorizerParams->tintColor.y, colorizerParams->tintColor.z);
-                            m_currentTexture->AddColorizerOperator(color);
-                            break;
+                            {
+                                auto colorizerParams = static_cast<ColorizerParams*>(m_currentParams.get());
+                                if(m_currentTexture == nullptr) return;
+                                auto color = glm::vec3(colorizerParams->tintColor.x, colorizerParams->tintColor.y, colorizerParams->tintColor.z);
+                                m_currentTexture->AddColorizerOperator(color);
+                                break;
+                            }
+                        case OperatorType::LoadType:
+                            {
+                                auto laodParams = static_cast<LoadParams*>(m_currentParams.get());
+                                m_currentTexture->AddLoadOperator(std::string(laodParams->name));
+                                break;
+                            }
+                        case OperatorType::SaveType:
+                            {
+                                auto saveParams = static_cast<SaveParams*>(m_currentParams.get());
+                                m_currentTexture->AddSaveOperator(std::string(saveParams->name));
+                                break;
+                            }
                     }
                     ImGui::CloseCurrentPopup();
                 }
@@ -140,7 +188,7 @@ public:
             ImGui::EndPopup();
         }
 
-        // Afficher la pile d'opérateurs
+        // Display the stack of operators
         if (ImGui::BeginChild("OperatorStack", ImVec2(0, 200), true)) {
             if(m_currentTexture == nullptr) return;
             for (size_t i = 0; i < m_currentTexture->GetOperators().size(); i++) {
@@ -149,9 +197,6 @@ public:
                 ImGui::Text("%d. %s", i + 1, m_currentTexture->GetOperators()[i]->GetOperatorName().c_str());
                 
                 ImGui::SameLine();
-                // if (ImGui::Button("X")) {
-                //     m_operatorStack.erase(m_operatorStack.begin() + i);
-                // }
                 ImGui::PopID();
             }
         }

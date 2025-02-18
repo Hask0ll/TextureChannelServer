@@ -3,8 +3,8 @@
 #include "Application/Application.h"
 
 
-void SaveOperator::process(std::string& name, std::vector<unsigned char>& data)
+void SaveOperator::process(std::string& name, std::list<std::vector<unsigned char>> stack)
 {
-    m_data = data;
-    Application::Get().GetStorage()->Save(name, m_data);
+    auto data = stack.back();
+    Application::Get().GetStorage()->Save(name, data);
 }

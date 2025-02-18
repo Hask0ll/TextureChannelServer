@@ -2,7 +2,9 @@
 #include "Application/Application.h"
 
 
-void LoadOperator::process(std::string& name)
+
+void LoadOperator::process(std::string& name, std::list<std::vector<unsigned char>> stack)
 {
-    m_data = Application::Get().GetStorage()->Load(name);
+    auto data = Application::Get().GetStorage()->Load(name);
+    stack.push_back(data);
 }
