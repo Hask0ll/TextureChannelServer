@@ -15,8 +15,8 @@ public:
         Renderer::Init();
         Renderer::SetUpdateCallback([this] { this->Update(); });
         Logger::Init("app.log", Logger::Level::DEBUG);
-        Logger::Info("Initialisation de l'application...");
-        Logger::Info("Application démarrée");
+        Logger::Info("Application Initialisation...");
+        Logger::Info("Application Started");
         m_storage = std::make_shared<Storage>();
         m_TextureUI = std::make_unique<TextureManagerUI>();
         m_Instance = this;
@@ -50,7 +50,6 @@ public:
 
     void AddTexture(std::string name)
     {
-        
     }
 private:
     std::list<unsigned char> m_stacks;

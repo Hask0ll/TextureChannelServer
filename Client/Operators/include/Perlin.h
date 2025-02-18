@@ -14,8 +14,7 @@ public:
     virtual std::string GetOperatorName()
     {
         return "Perlin Noise";
-    } 
-
+    }
   
 private:
     int m_Width, m_Height;

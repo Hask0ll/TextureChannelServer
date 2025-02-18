@@ -9,6 +9,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CONFIGURATION_TYPES "Debug;Release;RelWithDebInfo" CACHE STRING "Custom" FORCE)
 message("Generated with config types: ${CMAKE_CONFIGURATION_TYPES}")
 
+# Enable Hot Reload for MSVC compilers if supported.
+if (POLICY CMP0141)
+  cmake_policy(SET CMP0141 NEW)
+  set(CMAKE_MSVC_DEBUG_INFORMATION_FORMAT "$<IF:$<AND:$<C_COMPILER_ID:MSVC>,$<CXX_COMPILER_ID:MSVC>>,$<$<CONFIG:Debug,RelWithDebInfo>:EditAndContinue>,$<$<CONFIG:Debug,RelWithDebInfo>:ProgramDatabase>>")
+endif()
+
 # Find packages
 find_package(glm CONFIG REQUIRED)
 find_package(glad CONFIG REQUIRED)
@@ -68,5 +74,46 @@ target_link_libraries(Client PRIVATE
     glfw
 )
 
+# Server executable source files
+file(GLOB_RECURSE SERVER_SOURCES 
+    "${CMAKE_SOURCE_DIR}/Server/*.cpp"
+    "${CMAKE_SOURCE_DIR}/Server/*.h"
+)
+
+# Debug output
+message("Server sources: ${SERVER_SOURCES}")
+
+# Verify Server sources exist
+if(NOT SERVER_SOURCES)
+    message(FATAL_ERROR "No source files found for Server in ${CMAKE_SOURCE_DIR}/Server/")
+endif()
+
+# Server executable
+add_executable(Server ${SERVER_SOURCES})
+
+target_include_directories(Server PRIVATE 
+    "${CMAKE_SOURCE_DIR}/Server"
+    "${CMAKE_SOURCE_DIR}/Library"
+)
+
+target_link_libraries(Server PRIVATE 
+    Library
+    glm::glm
+    glad::glad
+    nlohmann_json::nlohmann_json
+    imgui::imgui
+    glfw
+)
+
 # Disable debug symbols for RelWithDebInfo build
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG")
+
+add_executable(Tests
+    "${CMAKE_SOURCE_DIR}/Tests/Tests.cpp"
+)
+
+target_link_libraries(Tests PRIVATE Library)
+
+# enable testing
+enable_testing()
+add_test(NAME Tests COMMAND Tests)
