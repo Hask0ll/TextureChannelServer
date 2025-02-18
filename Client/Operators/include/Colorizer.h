@@ -66,7 +66,7 @@ void processTexture(std::list<std::vector<unsigned char>>& stack) {
     glTextureSubImage2D(textureID, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, currentTexture.data());
 }
 
-    void Draw() override {
+    void Draw(std::list<std::vector<unsigned char>> stack) override {
         ImVec2 available = ImGui::GetContentRegionAvail();
         ImGui::Image((ImTextureID)(intptr_t)textureID, available);
     }

@@ -1,6 +1,8 @@
 #pragma once
+#include <imgui.h>
 #include <list>
 #include <vector>
+#include <glad/glad.h>
 
 #include "Operator.h"
 
@@ -21,9 +23,10 @@ public:
     }
     void process(std::string& name, std::list<std::vector<unsigned char>> stack);
 
-    virtual void Draw() override
+    virtual void Draw(std::list<std::vector<unsigned char>> stack) override
     {
-        // do nothing
+        ImVec2 available = ImGui::GetContentRegionAvail();
+        ImGui::Image((ImTextureID)(intptr_t)m_TextureID, available);
     }
 
     virtual size_t GetSerializedSize() const override
@@ -40,4 +43,5 @@ public:
     }
 private:
     std::vector<unsigned char> m_data;
+    GLuint m_TextureID;
 };

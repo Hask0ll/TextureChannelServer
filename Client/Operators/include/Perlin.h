@@ -119,7 +119,7 @@ public:
         glTextureParameteri(m_TextureID, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    virtual void Draw() override {
+    virtual void Draw(std::list<std::vector<unsigned char>> stack) override {
         ImVec2 available = ImGui::GetContentRegionAvail();
         ImGui::Image((ImTextureID)(intptr_t)m_TextureID, available);
     }

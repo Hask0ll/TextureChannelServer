@@ -71,21 +71,8 @@ public:
     {
         if(m_operators.empty()) return;
         auto last = m_operators.back();
-        // if(last == nullptr) return;
-        // last->Draw();
-
-        // retrieve lastStack element until it is not a laod or save
-        for(auto it = m_operators.rbegin(); it != m_operators.rend(); ++it)
-        {
-            if((*it)->GetOperatorName() == "Load" || (*it)->GetOperatorName() == "Save")
-            {
-                continue;
-            }
-            else
-            {
-                (*it)->Draw();
-            }
-        }
+        if(last == nullptr) return;
+        last->Draw(stack);
     }
 
     std::vector<Operator*> GetOperators()

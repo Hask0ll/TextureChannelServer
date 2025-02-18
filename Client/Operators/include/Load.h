@@ -1,6 +1,9 @@
 #pragma once
+#include <imgui.h>
 #include <list>
 #include <vector>
+#include <glad/glad.h>
+
 #include "Operator.h"
 
 class LoadOperator: public Operator
@@ -28,10 +31,12 @@ public:
         
     }
 
-    virtual void Draw() override
+    virtual void Draw(std::list<std::vector<unsigned char>>) override
     {
-        // do nothing
+        ImVec2 available = ImGui::GetContentRegionAvail();
+        ImGui::Image((ImTextureID)(intptr_t)m_TextureID, available);
     }
 private:
     std::vector<unsigned char> m_data;
+    GLuint m_TextureID;
 };
