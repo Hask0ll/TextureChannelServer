@@ -1,23 +1,25 @@
 #pragma once
 #include <vector>
+
 #include "Operator.h"
 
-class LoadOperator: public Operator
+class SaveOperator: public Operator 
 {
 public:
+
     virtual std::string GetOperatorName() override
     {
-        return "Load";
+        return "Save";
     }
 
-    LoadOperator() = default;
-
-    void process(std::string& name);
+    SaveOperator() = default;
 
     std::vector<unsigned char> GetData()
     {
         return m_data;
     }
+
+    void process(std::string& name, std::vector<unsigned char>& data);
 
     virtual void Draw() override
     {

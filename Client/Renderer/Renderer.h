@@ -1,5 +1,6 @@
 ﻿#pragma once
 #include <functional>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <imgui.h>
 #include <imgui_impl_glfw.h>
@@ -7,7 +8,6 @@
 #include <glm/glm.hpp>
 #include <stdexcept>
 #include <vector>
-#include <glad/glad.h>
 #pragma comment(lib, "OpenGl32.lib")
 
 
