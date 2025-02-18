@@ -68,6 +68,10 @@ target_include_directories(Client PRIVATE
 target_link_libraries(Client PRIVATE 
     Library
     glm::glm
+    glad::glad
+    nlohmann_json::nlohmann_json
+    imgui::imgui
+    glfw
 )
 
 # Disable debug symbols for RelWithDebInfo build
