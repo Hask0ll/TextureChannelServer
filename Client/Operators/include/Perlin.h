@@ -113,16 +113,17 @@ public:
     }
 
     virtual void Draw() override {
-        ImGui::Begin("Perlin Noise");
-        
-        // Afficher la texture avec ImGui
-        ImGui::Image(( ImTextureID)(intptr_t)m_TextureID, ImVec2(m_Width, m_Height));
-        
+        // Obtenir l'espace disponible dans la fenêtre
+        ImVec2 available = ImGui::GetContentRegionAvail();
+    
+        // Afficher l'image en utilisant tout l'espace disponible
+        ImGui::Image((ImTextureID)(intptr_t)m_TextureID, available);
+    
+        // Bouton en bas à droite
+        ImGui::SetCursorPos(ImVec2(available.x - 100, available.y - 30)); // Position pour le bouton
         if (ImGui::Button("Regenerate")) {
             generateNoiseTexture();
         }
-        
-        ImGui::End();
     }
 
     virtual std::vector<unsigned char> GetData()

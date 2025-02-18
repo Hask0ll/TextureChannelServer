@@ -64,10 +64,10 @@ public:
 
     void Draw()
     {
-        for(auto op : m_operators) // draw only stack last item
-        {
-            op->Draw();
-        }
+        if(m_operators.empty()) return;
+        auto last = m_operators.back();
+        if(last == nullptr) return;
+        last->Draw();
     }
 
     std::vector<Operator*> GetOperators()
