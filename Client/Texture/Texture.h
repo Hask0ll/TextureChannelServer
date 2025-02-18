@@ -38,7 +38,7 @@ public:
 
     void Draw()
     {
-        for(auto op : m_operators)
+        for(auto op : m_operators) // draw only stack last item
         {
             op->Draw();
         }

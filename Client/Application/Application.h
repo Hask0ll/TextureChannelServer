@@ -1,6 +1,7 @@
 ﻿#pragma once
 #include <list>
 
+#include "Logger/Logger.h"
 #include "Renderer/Renderer.h"
 #include "Texture/Texture.h"
 
@@ -11,6 +12,9 @@ public:
     {
         Renderer::Init();
         Renderer::SetUpdateCallback([this] { this->Update(); });
+        Logger::Init("app.log", Logger::Level::DEBUG);
+        Logger::Info("Initialisation de l'application...");
+        Logger::Info("Application démarrée");
         testTexture =  new Texture();
         // testTexture->AddPerlinOperator(5);
         testTexture->AddColorizerOperator();
@@ -18,6 +22,7 @@ public:
 
     ~Application()
     {
+        Logger::Shutdown();
         Renderer::Cleanup();
     }
 

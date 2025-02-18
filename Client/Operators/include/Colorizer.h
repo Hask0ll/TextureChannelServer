@@ -75,7 +75,7 @@ public:
         }
 
         // Afficher la texture
-        ImGui::Image((void*)(intptr_t)textureID, ImVec2(width, height));
+        ImGui::Image((ImTextureID)(intptr_t)textureID, ImVec2(width, height));
 
         ImGui::End();
     }
