@@ -14,10 +14,9 @@ public:
     }
 
     ColorizerOperator(glm::vec3 color) : width(512), height(512) {
-        // Initialiser avec du rouge comme couleur par défaut
         tintColor = ImVec4(color.x, color.y, color.z, 1.0f);
 
-        // Créer la texture
+        // create texture
         glCreateTextures(GL_TEXTURE_2D, 1, &textureID);
         glTextureStorage2D(textureID, 1, GL_RGBA8, width, height);
         
@@ -29,40 +28,45 @@ public:
         glDeleteTextures(1, &textureID);
     }
 
-    void processTexture(const std::vector<unsigned char>& input) {
-        currentTexture.resize(width * height * 4);
+void processTexture(std::list<std::vector<unsigned char>>& stack) {
+    bool isStackEmpty = stack.empty();
+    currentTexture.resize(width * height * 4);
 
-        for (int i = 0; i < width * height; i++) {
-            // Obtenir la luminosité depuis l'entrée (en utilisant le canal rouge)
-            float brightness = input[i * 4] / 255.0f;
-            
-            // Appliquer la luminosité à la couleur de teinte
-            currentTexture[i * 4 + 0] = static_cast<unsigned char>(brightness * tintColor.x * 255.0f);
-            currentTexture[i * 4 + 1] = static_cast<unsigned char>(brightness * tintColor.y * 255.0f);
-            currentTexture[i * 4 + 2] = static_cast<unsigned char>(brightness * tintColor.z * 255.0f);
-            currentTexture[i * 4 + 3] = static_cast<unsigned char>(tintColor.w * 255.0f);
+    for (int i = 0; i < width * height; i++) {
+        float brightness = !isStackEmpty ? stack.back()[i * 4] / 255.0f : 1.f;
+        
+        // Get existing color
+        glm::vec4 existingColor;
+        if (!isStackEmpty) {
+            existingColor = glm::vec4(
+                stack.back()[i * 4 + 0] / 255.0f,
+                stack.back()[i * 4 + 1] / 255.0f,
+                stack.back()[i * 4 + 2] / 255.0f,
+                stack.back()[i * 4 + 3] / 255.0f
+            );
+        } else {
+            existingColor = glm::vec4(1.0f);
         }
 
-        // Mettre à jour la texture
-        glTextureSubImage2D(textureID, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, currentTexture.data());
+        // Here we blend the colors
+        glm::vec4 finalColor = glm::vec4(
+            std::min(existingColor.x + tintColor.x, 1.0f),
+       std::min(existingColor.y + tintColor.y, 1.0f),
+       std::min(existingColor.z + tintColor.z, 1.0f),
+       tintColor.w * existingColor.w
+   );
+        
+        currentTexture[i * 4 + 0] = static_cast<unsigned char>(finalColor.x * 255.0f);
+        currentTexture[i * 4 + 1] = static_cast<unsigned char>(finalColor.y * 255.0f);
+        currentTexture[i * 4 + 2] = static_cast<unsigned char>(finalColor.z * 255.0f);
+        currentTexture[i * 4 + 3] = static_cast<unsigned char>(finalColor.w * 255.0f);
     }
-
-    void processTexture() {
-        currentTexture.resize(width * height * 4);
-
-        for (int i = 0; i < width * height; i++) {
-            auto brightness = 1.f;
-            
-            // Appliquer la luminosité à la couleur de teinte
-            currentTexture[i * 4 + 0] = static_cast<unsigned char>(brightness * tintColor.x * 255.0f);
-            currentTexture[i * 4 + 1] = static_cast<unsigned char>(brightness * tintColor.y * 255.0f);
-            currentTexture[i * 4 + 2] = static_cast<unsigned char>(brightness * tintColor.z * 255.0f);
-            currentTexture[i * 4 + 3] = static_cast<unsigned char>(tintColor.w * 255.0f);
-        }
-
-        // Mettre à jour la texture
-        glTextureSubImage2D(textureID, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, currentTexture.data());
-    }
+    
+    stack.pop_back();
+    stack.push_back(currentTexture);
+    
+    glTextureSubImage2D(textureID, 0, 0, 0, width, height, GL_RGBA, GL_UNSIGNED_BYTE, currentTexture.data());
+}
 
     void Draw() override {
         ImVec2 available = ImGui::GetContentRegionAvail();
