@@ -23,8 +23,6 @@ private:
 
     std::vector<unsigned char> m_Pixels;
 
-    
-
     float Generate2D(float x, float y) {
         int x0 = int(x);
         int y0 = int(y);
@@ -72,10 +70,9 @@ private:
 
 public:
     PerlinNoiseOperator(int numberOfOctaves = 1): m_OctavesNumber(numberOfOctaves), m_Width(512), m_Height(512) {
-        generateNoiseTexture();
     }
 
-    void generateNoiseTexture() {
+    void generateNoiseTexture(std::list<std::vector<unsigned char>>& stack) {
         m_Pixels.resize(m_Width * m_Height * 4);
         const float GRID_SIZE = 100.0f;
         
@@ -103,6 +100,7 @@ public:
             }
         }
 
+        stack.push_back(m_Pixels);
         // Créer la texture OpenGL
         glCreateTextures(GL_TEXTURE_2D, 1, &m_TextureID);
         glTextureStorage2D(m_TextureID, 1, GL_RGBA8, m_Width, m_Height);
