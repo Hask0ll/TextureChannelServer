@@ -1,8 +1,10 @@
-#include "NetworkClient.h"
+#include "NetWorkClient.h"
 #include <WS2tcpip.h>
 #include <stdexcept>
 #include <thread>
 #include <iostream>
+#include <vector>
+#include <functional>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -12,6 +14,7 @@ NetworkClient::NetworkClient(const char* ip, const char* port)
     , listening(false)
     , serverIP(ip)
     , serverPort(port)
+    , clientName("Anonymous")
 {
     InitializeWinsock();
 }
@@ -66,6 +69,25 @@ void NetworkClient::Connect() {
     if (!connected) {
         SetupSocket();
         connected = true;
+
+        // Set client name if not already set
+        if (clientName == "Anonymous") {
+            char hostname[256];
+            if (gethostname(hostname, sizeof(hostname)) == 0) {
+                clientName = hostname;
+            }
+        }
+
+        // Send client name to server
+        SendTextMessage("NAME:" + clientName);
+    }
+}
+
+void NetworkClient::SetClientName(const std::string& name) {
+    clientName = name;
+    if (connected) {
+        // Notify server about name change
+        SendTextMessage("NAME:" + clientName);
     }
 }
 
@@ -82,41 +104,96 @@ bool NetworkClient::IsConnected() const {
     return connected;
 }
 
-void NetworkClient::SendMessage(const std::string& message) {
+void NetworkClient::SendTextMessage(const std::string& message) {
     if (!connected) {
         throw std::runtime_error("Not connected to server");
     }
 
-    int bytesSent = send(clientSocket, message.c_str(), message.length(), 0);
-    if (bytesSent == SOCKET_ERROR) {
-        throw std::runtime_error("Failed to send message");
+    // Text message format
+    int messageType = 0;
+    size_t messageSize = message.size();
+
+    char header[sizeof(int) + sizeof(size_t)];
+    memcpy(header, &messageType, sizeof(int));
+    memcpy(header + sizeof(int), &messageSize, sizeof(size_t));
+
+    if (send(clientSocket, header, sizeof(header), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send message header");
+    }
+
+    if (send(clientSocket, message.c_str(), message.size(), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send message content");
     }
 }
 
-std::string NetworkClient::ReceiveMessage() {
+void NetworkClient::SendTextureData(const std::string& textureName, const std::vector<unsigned char>& data) {
     if (!connected) {
         throw std::runtime_error("Not connected to server");
     }
 
-    char buffer[512];
-    ZeroMemory(buffer, sizeof(buffer));
+    // Texture message format
+    int messageType = 1;
+    size_t totalSize = 1 + textureName.size() + data.size();
 
-    int bytesReceived = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
-    if (bytesReceived > 0) {
-        buffer[bytesReceived] = '\0';
-        return std::string(buffer);
+    char header[sizeof(int) + sizeof(size_t)];
+    memcpy(header, &messageType, sizeof(int));
+    memcpy(header + sizeof(int), &totalSize, sizeof(size_t));
+
+    if (send(clientSocket, header, sizeof(header), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send texture header");
     }
-    else if (bytesReceived == 0) {
-        Disconnect();
-        throw std::runtime_error("Server disconnected");
+
+    // Send name length and name
+    char nameLength = static_cast<char>(textureName.size());
+    if (send(clientSocket, &nameLength, 1, 0) == SOCKET_ERROR ||
+        send(clientSocket, textureName.c_str(), textureName.size(), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send texture name");
     }
-    else {
-        throw std::runtime_error("Error receiving message");
+
+    // Send texture data
+    if (send(clientSocket, reinterpret_cast<const char*>(data.data()), data.size(), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send texture data");
+    }
+}
+
+void NetworkClient::RequestTexture(const std::string& clientName, const std::string& textureName) {
+    if (!connected) {
+        throw std::runtime_error("Not connected to server");
+    }
+
+    // Texture request format
+    int messageType = 2;
+    size_t totalSize = 1 + clientName.size() + 1 + textureName.size();
+
+    char header[sizeof(int) + sizeof(size_t)];
+    memcpy(header, &messageType, sizeof(int));
+    memcpy(header + sizeof(int), &totalSize, sizeof(size_t));
+
+    if (send(clientSocket, header, sizeof(header), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send texture request header");
+    }
+
+    // Send client name length and name
+    char clientNameLength = static_cast<char>(clientName.size());
+    if (send(clientSocket, &clientNameLength, 1, 0) == SOCKET_ERROR ||
+        send(clientSocket, clientName.c_str(), clientName.size(), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send source client name");
+    }
+
+    // Send texture name length and name
+    char textureNameLength = static_cast<char>(textureName.size());
+    if (send(clientSocket, &textureNameLength, 1, 0) == SOCKET_ERROR ||
+        send(clientSocket, textureName.c_str(), textureName.size(), 0) == SOCKET_ERROR) {
+        throw std::runtime_error("Failed to send texture name");
     }
 }
 
 void NetworkClient::SetMessageCallback(std::function<void(const std::string&)> callback) {
     messageCallback = std::move(callback);
+}
+
+void NetworkClient::SetTextureReceivedCallback(std::function<void(const std::string&, const std::vector<unsigned char>&)> callback) {
+    textureReceivedCallback = std::move(callback);
 }
 
 void NetworkClient::StartListening() {
@@ -125,12 +202,50 @@ void NetworkClient::StartListening() {
     }
 
     listening = true;
-    std::thread([this]() {
+    listenThread = std::thread([this]() {
         while (listening && connected) {
             try {
-                std::string message = ReceiveMessage();
-                if (messageCallback) {
-                    messageCallback(message);
+                // Receive message header (type and size)
+                char headerBuffer[sizeof(int) + sizeof(size_t)];
+                int bytesReceived = recv(clientSocket, headerBuffer, sizeof(headerBuffer), 0);
+
+                if (bytesReceived <= 0) {
+                    if (bytesReceived == 0) {
+                        // Server disconnected
+                        if (messageCallback) {
+                            messageCallback("Disconnected from server");
+                        }
+                    }
+                    else {
+                        // Error
+                        if (messageCallback) {
+                            messageCallback("Error receiving from server: " + std::to_string(WSAGetLastError()));
+                        }
+                    }
+                    connected = false;
+                    listening = false;
+                    break;
+                }
+
+                // Parse message header
+                int messageType;
+                size_t dataSize;
+                memcpy(&messageType, headerBuffer, sizeof(int));
+                memcpy(&dataSize, headerBuffer + sizeof(int), sizeof(size_t));
+
+                // Handle based on message type
+                switch (messageType) {
+                case 0: // Text message
+                    HandleTextMessage(dataSize);
+                    break;
+                case 1: // Texture data
+                    HandleTextureData(dataSize);
+                    break;
+                default:
+                    if (messageCallback) {
+                        messageCallback("Received unknown message type: " + std::to_string(messageType));
+                    }
+                    break;
                 }
             }
             catch (const std::exception& e) {
@@ -138,76 +253,71 @@ void NetworkClient::StartListening() {
                     messageCallback("Error: " + std::string(e.what()));
                 }
                 listening = false;
+                connected = false;
                 break;
             }
         }
-        }).detach();
+        });
+
+    listenThread.detach();
+}
+
+void NetworkClient::HandleTextMessage(size_t size) {
+    std::vector<char> buffer(size);
+    int bytesReceived = recv(clientSocket, buffer.data(), size, 0);
+
+    if (bytesReceived <= 0) {
+        throw std::runtime_error("Error receiving text message");
+    }
+
+    std::string message(buffer.data(), bytesReceived);
+
+    if (messageCallback) {
+        messageCallback(message);
+    }
+}
+
+void NetworkClient::HandleTextureData(size_t size) {
+    // Receive texture name length
+    char nameLength;
+    if (recv(clientSocket, &nameLength, 1, 0) <= 0) {
+        throw std::runtime_error("Error receiving texture name length");
+    }
+
+    // Receive texture name
+    std::vector<char> nameBuffer(nameLength);
+    if (recv(clientSocket, nameBuffer.data(), nameLength, 0) <= 0) {
+        throw std::runtime_error("Error receiving texture name");
+    }
+    std::string textureName(nameBuffer.data(), nameLength);
+
+    // Receive texture data
+    size_t dataSize = size - nameLength - 1;
+    std::vector<unsigned char> textureData(dataSize);
+
+    size_t totalReceived = 0;
+    while (totalReceived < dataSize) {
+        int bytesReceived = recv(clientSocket, reinterpret_cast<char*>(textureData.data() + totalReceived),
+            dataSize - totalReceived, 0);
+        if (bytesReceived <= 0) {
+            throw std::runtime_error("Error receiving texture data");
+        }
+        totalReceived += bytesReceived;
+    }
+
+    // Notify about the received texture
+    if (textureReceivedCallback) {
+        textureReceivedCallback(textureName, textureData);
+    }
 }
 
 void NetworkClient::StopListening() {
     listening = false;
+    if (listenThread.joinable()) {
+        listenThread.join();
+    }
 }
 
 void NetworkClient::Cleanup() {
     WSACleanup();
-}
-
-void NetworkClient::Sending(bool ApplicationRunning)
-{
-    std::thread([&]() {
-        bool retry = true;
-        while (true)
-        {
-            std::string message;
-            std::cout << "Client waiting message...";
-
-            try {
-                SendMessage(message);
-            }
-            catch (const std::exception& e) {
-                std::cerr << "Error sending message: " << e.what() << std::endl;
-                ApplicationRunning = false;
-            }
-        }
-        }).detach();
-}
-
-void NetworkClient::SendBinaryData(const char* data, size_t size) {
-    if (!connected) {
-        throw std::runtime_error("Not connected to server");
-    }
-
-    // Need to send the size first
-    int bytesSent = send(clientSocket, reinterpret_cast<const char*>(&size), sizeof(size_t), 0);
-    if (bytesSent == SOCKET_ERROR) {
-        throw std::runtime_error("Failed to send data size");
-    }
-
-    // Next send data
-    bytesSent = send(clientSocket, data, size, 0);
-    if (bytesSent == SOCKET_ERROR) {
-        throw std::runtime_error("Failed to send data");
-    }
-}
-
-std::vector<char> NetworkClient::ReceiveBinaryData() {
-    if (!connected) {
-        throw std::runtime_error("Not connected to server");
-    }
-
-    // First receive the size
-    size_t size;
-    int bytesReceived = recv(clientSocket, reinterpret_cast<char*>(&size), sizeof(size_t), 0);
-    if (bytesReceived <= 0) {
-        throw std::runtime_error("Failed to receive data size");
-    }
-
-    // Next receive the data
-    std::vector<char> buffer(size);
-    bytesReceived = recv(clientSocket, buffer.data(), size, 0);
-    if (bytesReceived <= 0) {
-        throw std::runtime_error("Failed to receive data");
-    }
-
-    return buffer;
 }

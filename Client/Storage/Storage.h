@@ -3,7 +3,6 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
-#include "Logger/Logger.h"
 
 class Storage
 {
@@ -16,7 +15,6 @@ public:
         {
             return m_storage[name];
         }
-        Logger::Error("No such key in storage");
         throw std::runtime_error("No such key in storage");
     }
 
@@ -24,7 +22,6 @@ public:
     {
         if(m_storage.find(name) != m_storage.end())
         {
-            Logger::Error("Key already exists in storage");
             throw std::runtime_error("Key already exists in storage");
         }
         m_storage[name] = data;

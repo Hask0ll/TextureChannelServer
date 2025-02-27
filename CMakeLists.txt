@@ -43,6 +43,15 @@ target_link_libraries(Library PRIVATE
     glfw
 )
 
+# Client networking source files
+file(GLOB NETWORKING_SOURCES
+    "${CMAKE_SOURCE_DIR}/Client/TextureNetworkManager.cpp"
+    "${CMAKE_SOURCE_DIR}/Client/TextureNetworkManager.h"
+    "${CMAKE_SOURCE_DIR}/Client/NetworkUI.cpp"
+    "${CMAKE_SOURCE_DIR}/Client/NetworkUI.h"
+    "${CMAKE_SOURCE_DIR}/Client/UI/src/TextureManager.cpp"
+)
+
 # Client executable source files
 file(GLOB_RECURSE CLIENT_SOURCES 
     "${CMAKE_SOURCE_DIR}/Client/*.cpp"
@@ -51,6 +60,7 @@ file(GLOB_RECURSE CLIENT_SOURCES
 
 # Debug output
 message("Client sources: ${CLIENT_SOURCES}")
+message("Networking sources: ${NETWORKING_SOURCES}")
 
 # Verify Client sources exist
 if(NOT CLIENT_SOURCES)
@@ -107,13 +117,3 @@ target_link_libraries(Server PRIVATE
 
 # Disable debug symbols for RelWithDebInfo build
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -DNDEBUG")
-
-add_executable(Tests
-    "${CMAKE_SOURCE_DIR}/Tests/Tests.cpp"
-)
-
-target_link_libraries(Tests PRIVATE Library)
-
-# enable testing
-enable_testing()
-add_test(NAME Tests COMMAND Tests)

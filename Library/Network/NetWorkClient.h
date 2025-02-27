@@ -8,6 +8,8 @@
 #include <WS2tcpip.h>
 #include <string>
 #include <functional>
+#include <thread>
+#include <vector>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -24,27 +26,37 @@ public:
     void Connect();
     void Disconnect();
     bool IsConnected() const;
+    void SetClientName(const std::string& name);
 
     // Message handling
-    void SendMessage(const std::string& message);
-    std::string ReceiveMessage();
+    void SendTextMessage(const std::string& message);
+    void SendTextureData(const std::string& textureName, const std::vector<unsigned char>& data);
+    void RequestTexture(const std::string& clientName, const std::string& textureName);
+
+    // Callbacks
+    void SetMessageCallback(std::function<void(const std::string&)> callback);
+    void SetTextureReceivedCallback(std::function<void(const std::string&, const std::vector<unsigned char>&)> callback);
 
     // Async message handling
-    void SetMessageCallback(std::function<void(const std::string&)> callback);
     void StartListening();
     void StopListening();
-    void Sending(bool ApplicationRunning);
-    void NetworkClient::SendBinaryData(const char* data, size_t size);
-    std::vector<char> NetworkClient::ReceiveBinaryData();
+
 private:
     void InitializeWinsock();
     void SetupSocket();
     void Cleanup();
+
+    // Message handling helpers
+    void HandleTextMessage(size_t size);
+    void HandleTextureData(size_t size);
 
     SOCKET clientSocket;
     bool connected;
     bool listening;
     std::string serverIP;
     std::string serverPort;
+    std::string clientName;
+    std::thread listenThread;
     std::function<void(const std::string&)> messageCallback;
+    std::function<void(const std::string&, const std::vector<unsigned char>&)> textureReceivedCallback;
 };

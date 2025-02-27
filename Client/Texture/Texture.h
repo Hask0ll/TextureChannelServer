@@ -2,13 +2,11 @@
 #include <list>
 #include <vector>
 
-#include "Operators/include/Colorizer.h"
-// #include "Operators/include/Load.h"
-#include "Operators/include/Load.h"
-#include "Operators/include/Operator.h"
-#include "Operators/include/Perlin.h"
-#include "Operators/include/Save.h"
-// #include "Operators/include/Save.h"
+#include "../Operators/include/Colorizer.h"
+#include "../Operators/include/Load.h"
+#include "../Operators/include/Operator.h"
+#include "../Operators/include/Perlin.h"
+#include "../Operators/include/Save.h"
 
 enum OperatorName
 {
